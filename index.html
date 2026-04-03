@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Tree ID — Arborist Tool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bark:      #1E1208;
+    --bark2:     #2C1A0E;
+    --moss:      #2E4A2F;
+    --leaf:      #4A7C35;
+    --sage:      #7DAF62;
+    --pale:      #A8C990;
+    --cream:     #F2EBD9;
+    --parchment: #E6D9BC;
+    --amber:     #C8893A;
+    --amber2:    #E8A94A;
+    --ink:       #120C04;
+    --red:       #C0402A;
+    --red-bg:    rgba(192,64,42,0.12);
+  }
+
+  html { font-size: 16px; }
+
+  body {
+    background: var(--bark);
+    color: var(--cream);
+    font-family: 'DM Mono', monospace;
+    min-height: 100dvh;
+    padding: 0;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(74,124,53,0.22) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 40% at 80% 110%, rgba(200,137,58,0.10) 0%, transparent 60%);
+  }
+
+  /* ── SCREENS ── */
+  .screen { display: none; flex-direction: column; min-height: 100dvh; }
+  .screen.active { display: flex; }
+
+  /* ══ SETUP SCREEN ══ */
+  #setupScreen {
+    justify-content: center;
+    align-items: center;
+    padding: 32px 24px;
+    text-align: center;
+  }
+
+  .logo-mark {
+    width: 64px; height: 64px;
+    margin: 0 auto 20px;
+  }
+
+  .eyebrow {
+    font-size: 10px; letter-spacing: 0.25em;
+    text-transform: uppercase; color: var(--sage);
+    margin-bottom: 8px;
+  }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(30px, 8vw, 44px);
+    font-weight: 400;
+    line-height: 1.1;
+    color: var(--cream);
+  }
+  h1 em { color: var(--amber); font-style: italic; }
+
+  .tagline {
+    font-size: 11px; color: var(--pale); opacity: 0.75;
+    margin-top: 10px; line-height: 1.7; letter-spacing: 0.03em;
+  }
+
+  .setup-card {
+    margin-top: 36px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 16px;
+    padding: 24px 22px;
+    width: 100%; max-width: 420px;
+    text-align: left;
+  }
+
+  .field-label {
+    font-size: 10px; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--sage);
+    margin-bottom: 8px; display: block;
+  }
+
+  input[type=text], input[type=password], textarea {
+    width: 100%;
+    background: rgba(0,0,0,0.25);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    color: var(--cream);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    padding: 12px 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+  input[type=text]:focus, input[type=password]:focus, textarea:focus {
+    border-color: var(--sage);
+  }
+  input::placeholder, textarea::placeholder { color: rgba(242,235,217,0.28); }
+
+  .key-hint {
+    font-size: 10px; color: var(--pale); opacity: 0.55;
+    margin-top: 7px; line-height: 1.6;
+  }
+  .key-hint a { color: var(--sage); text-decoration: none; }
+
+  .privacy-note {
+    margin-top: 14px;
+    padding: 10px 12px;
+    background: rgba(74,124,53,0.1);
+    border-left: 2px solid var(--leaf);
+    border-radius: 4px;
+    font-size: 10px; color: var(--pale); line-height: 1.65;
+  }
+
+  /* Primary button */
+  .btn-primary {
+    display: block; width: 100%;
+    margin-top: 20px;
+    padding: 15px;
+    background: linear-gradient(135deg, var(--moss), var(--leaf));
+    border: none; border-radius: 10px;
+    color: var(--cream);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px; letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(46,74,47,0.5); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* Ghost button */
+  .btn-ghost {
+    display: block; width: 100%;
+    padding: 11px;
+    background: transparent;
+    border: 1px solid rgba(125,175,98,0.28);
+    border-radius: 10px;
+    color: var(--sage);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px; letter-spacing: 0.13em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-ghost:hover { background: rgba(46,74,47,0.2); color: var(--cream); }
+
+  /* ══ MAIN SCREEN ══ */
+  #mainScreen {
+    padding-bottom: 24px;
+  }
+
+  .top-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .top-bar-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px; font-style: italic;
+    color: var(--amber);
+  }
+
+  .settings-btn {
+    background: none; border: none;
+    color: var(--sage); cursor: pointer;
+    font-size: 18px; padding: 4px 8px;
+    -webkit-tap-highlight-color: transparent;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+  }
+  .settings-btn:hover { opacity: 1; }
+
+  .main-body { padding: 20px; }
+
+  /* Upload zone */
+  .upload-zone {
+    border: 1.5px dashed rgba(125,175,98,0.35);
+    border-radius: 12px;
+    padding: 32px 20px;
+    text-align: center;
+    cursor: pointer;
+    position: relative;
+    background: rgba(46,74,47,0.07);
+    transition: all 0.25s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--sage);
+    background: rgba(46,74,47,0.16);
+  }
+  .upload-zone input[type=file] {
+    position: absolute; inset: 0; opacity: 0;
+    cursor: pointer; width: 100%; height: 100%;
+    font-size: 0;
+  }
+
+  .upload-icon-wrap { margin-bottom: 14px; }
+
+  .upload-text { font-size: 14px; color: var(--parchment); margin-bottom: 4px; }
+  .upload-sub  { font-size: 10px; color: var(--sage); letter-spacing: 0.08em; }
+
+  /* Camera quick-tap on mobile */
+  .camera-btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    margin-top: 14px;
+    padding: 9px 18px;
+    background: rgba(74,124,53,0.2);
+    border: 1px solid rgba(125,175,98,0.3);
+    border-radius: 99px;
+    color: var(--sage); font-family: 'DM Mono', monospace;
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    cursor: pointer; position: relative;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .camera-btn input {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer;
+    width: 100%; height: 100%;
+  }
+
+  /* Preview */
+  #previewWrap { display: none; margin-top: 0; position: relative; }
+  #previewImg {
+    width: 100%; border-radius: 12px;
+    max-height: 260px; object-fit: cover;
+    border: 1px solid rgba(255,255,255,0.1);
+    display: block;
+  }
+  .preview-actions {
+    display: flex; gap: 10px; margin-top: 10px;
+  }
+  .preview-actions button {
+    flex: 1; padding: 9px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    color: var(--pale); font-family: 'DM Mono', monospace;
+    font-size: 11px; cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.2s;
+  }
+  .preview-actions button:hover { background: rgba(0,0,0,0.5); }
+  #retakeBtn { border-color: rgba(200,137,58,0.25); color: var(--amber); }
+
+  /* Tips */
+  .tips {
+    margin-top: 16px;
+    padding: 12px 14px;
+    background: rgba(74,124,53,0.08);
+    border-left: 2px solid rgba(74,124,53,0.5);
+    border-radius: 4px;
+  }
+  .tips-title { font-size: 9px; letter-spacing: 0.2em; color: var(--sage); text-transform: uppercase; margin-bottom: 6px; }
+  .tips ul { list-style: none; }
+  .tips li { font-size: 11px; color: var(--parchment); opacity: 0.7; padding: 2px 0 2px 14px; position: relative; line-height: 1.5; }
+  .tips li::before { content: '→'; position: absolute; left: 0; color: var(--sage); }
+
+  /* Context */
+  .section-label {
+    font-size: 10px; letter-spacing: 0.15em; color: var(--sage);
+    text-transform: uppercase; margin-bottom: 7px; display: block;
+    margin-top: 18px;
+  }
+  textarea { resize: vertical; min-height: 72px; font-size: 12px; }
+
+  /* Identify btn */
+  #identifyBtn { margin-top: 18px; }
+
+  /* Spinner */
+  .spinner {
+    display: inline-block; width: 13px; height: 13px;
+    border: 2px solid rgba(255,255,255,0.25);
+    border-top-color: white; border-radius: 50%;
+    animation: spin 0.65s linear infinite;
+    vertical-align: middle; margin-right: 7px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Error */
+  .error-box {
+    margin-top: 14px; padding: 12px 14px;
+    background: var(--red-bg);
+    border: 1px solid rgba(192,64,42,0.35);
+    border-radius: 8px;
+    font-size: 12px; color: #f4a090;
+    display: none; line-height: 1.6;
+  }
+
+  /* ── RESULTS ── */
+  #resultsSection { display: none; margin-top: 22px; }
+
+  .results-hero {
+    background: linear-gradient(135deg, rgba(46,74,47,0.55), rgba(74,124,53,0.3));
+    border: 1px solid rgba(125,175,98,0.2);
+    border-radius: 12px 12px 0 0;
+    padding: 18px 18px 16px;
+    display: flex; align-items: flex-start; gap: 14px;
+  }
+
+  .tree-icon {
+    flex-shrink: 0; margin-top: 2px;
+  }
+
+  .species-scientific {
+    font-family: 'Playfair Display', serif;
+    font-size: 21px; font-style: italic;
+    color: var(--cream); line-height: 1.2;
+  }
+  .species-common {
+    font-size: 11px; color: var(--sage); margin-top: 4px;
+    letter-spacing: 0.06em;
+  }
+  .species-family {
+    font-size: 10px; color: var(--pale); opacity: 0.55;
+    margin-top: 2px;
+  }
+
+  .results-body {
+    background: rgba(255,255,255,0.025);
+    border: 1px solid rgba(125,175,98,0.15);
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+    padding: 16px 18px;
+  }
+
+  .result-section { margin-bottom: 18px; }
+  .result-section:last-child { margin-bottom: 0; }
+
+  .r-title {
+    font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--amber); padding-bottom: 6px;
+    border-bottom: 1px solid rgba(200,137,58,0.18);
+    margin-bottom: 9px;
+  }
+
+  .r-text {
+    font-size: 12px; line-height: 1.75;
+    color: var(--parchment); opacity: 0.88;
+  }
+
+  .conf-row {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 11px; color: var(--sage); margin-bottom: 5px;
+  }
+  .conf-val { color: var(--amber2); font-weight: 500; }
+  .conf-bar {
+    height: 5px; background: rgba(255,255,255,0.08);
+    border-radius: 99px; overflow: hidden;
+  }
+  .conf-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--leaf), var(--sage));
+    border-radius: 99px;
+    transition: width 1.2s cubic-bezier(.22,.68,0,1.2);
+  }
+
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .tag {
+    padding: 4px 11px;
+    background: rgba(74,124,53,0.15);
+    border: 1px solid rgba(125,175,98,0.22);
+    border-radius: 99px;
+    font-size: 11px; color: var(--sage); line-height: 1.4;
+  }
+  .tag.warn {
+    background: rgba(200,137,58,0.12);
+    border-color: rgba(200,137,58,0.3);
+    color: var(--amber2);
+  }
+
+  .disclaimer {
+    margin-top: 20px;
+    font-size: 10px; color: rgba(242,235,217,0.3);
+    text-align: center; line-height: 1.7;
+  }
+
+  /* ══ SETTINGS PANEL ══ */
+  #settingsPanel {
+    display: none;
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(18,12,4,0.92);
+    backdrop-filter: blur(8px);
+    flex-direction: column;
+    padding: 40px 24px 32px;
+    justify-content: center;
+  }
+  #settingsPanel.open { display: flex; }
+
+  .settings-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px; color: var(--cream);
+    margin-bottom: 24px;
+  }
+
+  .settings-close {
+    position: absolute; top: 20px; right: 20px;
+    background: none; border: none;
+    color: var(--sage); font-size: 22px; cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .divider { height: 1px; background: rgba(255,255,255,0.07); margin: 20px 0; }
+
+</style>
+</head>
+<body>
+
+<!-- ═══ SETUP SCREEN ═══ -->
+<div id="setupScreen" class="screen active">
+  <svg class="logo-mark" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="32" cy="32" r="31" stroke="rgba(125,175,98,0.3)" stroke-width="1"/>
+    <path d="M32 10 C26 18 18 22 18 30 C18 38.8 24.3 44 32 44 C39.7 44 46 38.8 46 30 C46 22 38 18 32 10Z" fill="rgba(74,124,53,0.7)" stroke="rgba(125,175,98,0.4)" stroke-width="0.5"/>
+    <path d="M22 26 C22 26 26 28 29 26 C32 24 34 26 38 24" stroke="rgba(168,201,144,0.5)" stroke-width="0.8" fill="none"/>
+    <line x1="32" y1="44" x2="32" y2="56" stroke="rgba(74,124,53,0.6)" stroke-width="2" stroke-linecap="round"/>
+    <line x1="28" y1="50" x2="24" y2="54" stroke="rgba(74,124,53,0.4)" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="36" y1="48" x2="40" y2="52" stroke="rgba(74,124,53,0.4)" stroke-width="1.5" stroke-linecap="round"/>
+  </svg>
+
+  <div class="eyebrow">Arborist Field Tool</div>
+  <h1>Tree <em>Species</em><br>Identifier</h1>
+  <p class="tagline">Photograph any tree. Get instant species ID,<br>ecology notes & treatment guidance.</p>
+
+  <div class="setup-card">
+    <label class="field-label" for="apiKeyInput">Anthropic API Key</label>
+    <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." autocomplete="off" autocorrect="off" spellcheck="false">
+    <p class="key-hint">
+      Get your free key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a><br>
+      → API Keys → Create Key
+    </p>
+
+    <div class="privacy-note">
+      🔒 Your key is stored only in this browser (localStorage). It is never sent to any server other than Anthropic's API directly from your device.
+    </div>
+
+    <button class="btn-primary" id="startBtn">Get Started</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN SCREEN ═══ -->
+<div id="mainScreen" class="screen">
+  <div class="top-bar">
+    <div class="top-bar-title">Tree ID</div>
+    <button class="settings-btn" id="openSettings" title="Settings">⚙</button>
+  </div>
+
+  <div class="main-body">
+    <!-- Upload zone -->
+    <div class="upload-zone" id="uploadZone">
+      <input type="file" id="fileInput" accept="image/*">
+      <div class="upload-icon-wrap">
+        <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
+          <path d="M22 4C16.477 4 12 8.477 12 14c0 .31.015.617.046.92C8.77 15.93 6 18.7 6 22c0 3.314 2.686 6 6 6h4v-2h-4a4 4 0 010-8h.46l.46-1.4A8 8 0 0130 14a8 8 0 018 8h.5a4.5 4.5 0 010 9H32v2h6.5A6.5 6.5 0 0038 22a10 10 0 00-9.05-9.95A10 10 0 0022 4z" fill="rgba(125,175,98,0.6)"/>
+          <path d="M20 26v12h4V26l4 4 1.5-1.5L22 21l-7.5 7.5L16 30l4-4z" fill="rgba(125,175,98,0.6)"/>
+        </svg>
+      </div>
+      <div class="upload-text">Drop a tree photo here</div>
+      <div class="upload-sub">JPG · PNG · WEBP · up to 30 MB</div>
+    </div>
+
+    <!-- Camera button (mobile) -->
+    <div style="text-align:center; margin-top:12px;">
+      <label class="camera-btn">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M5.5 2L4.5 4H2a1 1 0 00-1 1v8a1 1 0 001 1h12a1 1 0 001-1V5a1 1 0 00-1-1h-2.5L10.5 2h-5zM8 12a3 3 0 110-6 3 3 0 010 6z" fill="currentColor"/>
+        </svg>
+        Take Photo
+        <input type="file" id="cameraInput" accept="image/*" capture="environment">
+      </label>
+    </div>
+
+    <!-- Preview -->
+    <div id="previewWrap">
+      <img id="previewImg" alt="Tree photo">
+      <div class="preview-actions">
+        <button id="retakeBtn">↺ Change photo</button>
+      </div>
+    </div>
+
+    <!-- Tips -->
+    <div class="tips" id="tipsBlock">
+      <div class="tips-title">Photo tips</div>
+      <ul>
+        <li>Photograph leaves (top & underside), bark, and overall shape</li>
+        <li>Include fruit, seeds, or flowers when visible</li>
+        <li>Good natural light — avoid heavy shadows</li>
+        <li>Crop tightly to save tokens & get faster results</li>
+      </ul>
+    </div>
+
+    <!-- Context -->
+    <label class="section-label" for="contextInput">Additional context <span style="opacity:0.45;">(optional)</span></label>
+    <textarea id="contextInput" placeholder="e.g. Pacific Northwest, USA. ~15m tall. Showing signs of canker on lower branches."></textarea>
+
+    <button class="btn-primary" id="identifyBtn" disabled>Identify Tree Species</button>
+
+    <div class="error-box" id="errorBox"></div>
+
+    <!-- Results -->
+    <div id="resultsSection">
+      <div class="results-hero">
+        <div class="tree-icon">
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+            <circle cx="18" cy="18" r="17" stroke="rgba(125,175,98,0.4)" stroke-width="1"/>
+            <path d="M18 7 C14 12 10 15 10 20 C10 24.4 13.6 27 18 27 C22.4 27 26 24.4 26 20 C26 15 22 12 18 7Z" fill="rgba(74,124,53,0.75)"/>
+            <line x1="18" y1="27" x2="18" y2="32" stroke="rgba(74,124,53,0.7)" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="species-scientific" id="speciesName">—</div>
+          <div class="species-common" id="commonName">—</div>
+          <div class="species-family" id="familyName">—</div>
+        </div>
+      </div>
+
+      <div class="results-body" id="resultsBody"></div>
+    </div>
+
+    <div class="disclaimer" id="disclaimer" style="display:none;">
+      AI identification — always verify with a qualified botanist or arborist<br>before making treatment decisions.
+    </div>
+
+    <button class="btn-ghost" id="newBtn" style="display:none; margin-top:14px;">↺ New Identification</button>
+  </div>
+</div>
+
+<!-- ═══ SETTINGS PANEL ═══ -->
+<div id="settingsPanel">
+  <button class="settings-close" id="closeSettings">✕</button>
+  <div class="settings-title">Settings</div>
+
+  <label class="field-label" for="apiKeyEdit">API Key</label>
+  <input type="password" id="apiKeyEdit" placeholder="sk-ant-api03-..." autocomplete="off">
+
+  <div class="divider"></div>
+  <button class="btn-primary" id="saveSettings">Save</button>
+  <div style="margin-top:10px;">
+    <button class="btn-ghost" id="clearKey">Clear API key & reset</button>
+  </div>
+</div>
+
+<script>
+  // ── State ──
+  let apiKey = localStorage.getItem('tree_api_key') || '';
+  let base64Image = null;
+  let imageMediaType = 'image/jpeg';
+
+  // ── Elements ──
+  const setupScreen   = document.getElementById('setupScreen');
+  const mainScreen    = document.getElementById('mainScreen');
+  const apiKeyInput   = document.getElementById('apiKeyInput');
+  const startBtn      = document.getElementById('startBtn');
+  const fileInput     = document.getElementById('fileInput');
+  const cameraInput   = document.getElementById('cameraInput');
+  const uploadZone    = document.getElementById('uploadZone');
+  const previewWrap   = document.getElementById('previewWrap');
+  const previewImg    = document.getElementById('previewImg');
+  const retakeBtn     = document.getElementById('retakeBtn');
+  const tipsBlock     = document.getElementById('tipsBlock');
+  const contextInput  = document.getElementById('contextInput');
+  const identifyBtn   = document.getElementById('identifyBtn');
+  const errorBox      = document.getElementById('errorBox');
+  const resultsSection= document.getElementById('resultsSection');
+  const newBtn        = document.getElementById('newBtn');
+  const disclaimer    = document.getElementById('disclaimer');
+  const openSettings  = document.getElementById('openSettings');
+  const closeSettings = document.getElementById('closeSettings');
+  const settingsPanel = document.getElementById('settingsPanel');
+  const apiKeyEdit    = document.getElementById('apiKeyEdit');
+  const saveSettings  = document.getElementById('saveSettings');
+  const clearKey      = document.getElementById('clearKey');
+
+  // ── Init ──
+  if (apiKey) showMain();
+
+  // ── Setup ──
+  startBtn.addEventListener('click', () => {
+    const k = apiKeyInput.value.trim();
+    if (!k.startsWith('sk-ant-')) {
+      alert('Please enter a valid Anthropic API key (starts with sk-ant-)');
+      return;
+    }
+    apiKey = k;
+    localStorage.setItem('tree_api_key', k);
+    showMain();
+  });
+
+  function showMain() {
+    setupScreen.classList.remove('active');
+    mainScreen.classList.add('active');
+  }
+
+  function showSetup() {
+    mainScreen.classList.remove('active');
+    setupScreen.classList.add('active');
+    apiKeyInput.value = '';
+  }
+
+  // ── Settings ──
+  openSettings.addEventListener('click', () => {
+    apiKeyEdit.value = apiKey;
+    settingsPanel.classList.add('open');
+  });
+  closeSettings.addEventListener('click', () => settingsPanel.classList.remove('open'));
+  saveSettings.addEventListener('click', () => {
+    const k = apiKeyEdit.value.trim();
+    if (k) { apiKey = k; localStorage.setItem('tree_api_key', k); }
+    settingsPanel.classList.remove('open');
+  });
+  clearKey.addEventListener('click', () => {
+    if (confirm('Clear API key and return to setup?')) {
+      localStorage.removeItem('tree_api_key');
+      apiKey = '';
+      settingsPanel.classList.remove('open');
+      showSetup();
+    }
+  });
+
+  // ── File handling ──
+  function handleFile(file) {
+    if (!file) return;
+    imageMediaType = 'image/jpeg'; // always compress to jpeg
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        // Resize so longest edge is max 1600px — plenty for tree ID
+        const MAX = 1600;
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+          else       { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+
+        // Start at 0.85 quality, drop until under 4MB
+        let quality = 0.85;
+        let dataUrl;
+        do {
+          dataUrl = canvas.toDataURL('image/jpeg', quality);
+          quality -= 0.1;
+        } while (dataUrl.length * 0.75 > 4 * 1024 * 1024 && quality > 0.2);
+
+        base64Image = dataUrl.split(',')[1];
+        previewImg.src = dataUrl;
+        uploadZone.style.display  = 'none';
+        document.querySelector('.camera-btn').parentElement.style.display = 'none';
+        previewWrap.style.display = 'block';
+        tipsBlock.style.display   = 'none';
+        identifyBtn.disabled      = false;
+        resetResults();
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  fileInput.addEventListener('change',  () => handleFile(fileInput.files[0]));
+  cameraInput.addEventListener('change',() => handleFile(cameraInput.files[0]));
+
+  uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+  uploadZone.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadZone.classList.remove('drag-over');
+    if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+  });
+
+  retakeBtn.addEventListener('click', resetUpload);
+
+  function resetUpload() {
+    base64Image = null;
+    fileInput.value = '';
+    cameraInput.value = '';
+    previewWrap.style.display = 'none';
+    uploadZone.style.display  = '';
+    document.querySelector('.camera-btn').parentElement.style.display = '';
+    tipsBlock.style.display   = '';
+    identifyBtn.disabled      = true;
+    resetResults();
+  }
+
+  function resetResults() {
+    resultsSection.style.display = 'none';
+    newBtn.style.display         = 'none';
+    disclaimer.style.display     = 'none';
+    errorBox.style.display       = 'none';
+  }
+
+  newBtn.addEventListener('click', () => {
+    resetUpload();
+    contextInput.value = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  // ── Identify ──
+  identifyBtn.addEventListener('click', async () => {
+    if (!base64Image || !apiKey) return;
+
+    identifyBtn.disabled = true;
+    identifyBtn.innerHTML = '<span class="spinner"></span>Analysing…';
+    resetResults();
+    errorBox.style.display = 'none';
+
+    const context = contextInput.value.trim();
+
+    const prompt = `You are an expert arborist and botanist with 30 years field experience. Analyse this tree photograph carefully and provide a structured identification report.
+
+${context ? `Arborist's field notes: ${context}\n\n` : ''}Respond with ONLY a valid JSON object — no markdown, no backticks, no preamble. Use this exact structure:
+{
+  "scientific_name": "Genus species",
+  "common_names": ["Primary name", "Alternate name"],
+  "family": "Plant family name",
+  "confidence": 82,
+  "identifying_features": "2-3 sentences on the specific visual features used for identification — leaf shape, bark texture, branching pattern etc.",
+  "ecology": "Native range, preferred habitat, typical size and growth habit.",
+  "arborist_notes": "Practical guidance for a tree surgeon: structural characteristics, wood properties, root behaviour, typical lifespan, pruning response.",
+  "diseases_pests": "Common diseases and pests for this species, early warning signs, and standard treatments.",
+  "visible_issues": ["Any disease, damage, or stress signs visible in THIS photo — or 'No visible issues detected'"],
+  "similar_species": ["Species most commonly confused with this one and key distinguishing features"]
+}`;
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-opus-4-5',
+          max_tokens: 1200,
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'image', source: { type: 'base64', media_type: imageMediaType, data: base64Image } },
+              { type: 'text', text: prompt }
+            ]
+          }]
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error?.message || `API error ${res.status}`);
+
+      const raw = data.content.map(b => b.text || '').join('');
+      const clean = raw.replace(/```json|```/g, '').trim();
+      const r = JSON.parse(clean);
+      renderResults(r);
+
+    } catch (err) {
+      let msg = err.message;
+      if (msg.includes('401') || msg.includes('authentication')) {
+        msg = 'Invalid API key. Tap ⚙ to update it.';
+      } else if (msg.includes('429')) {
+        msg = 'Rate limit reached. Wait a moment and try again.';
+      } else if (msg.includes('JSON')) {
+        msg = 'Unexpected response from AI. Try again with a clearer photo.';
+      }
+      errorBox.textContent = '⚠ ' + msg;
+      errorBox.style.display = 'block';
+    }
+
+    identifyBtn.innerHTML = 'Identify Tree Species';
+    identifyBtn.disabled = false;
+  });
+
+  // ── Render ──
+  function renderResults(r) {
+    document.getElementById('speciesName').textContent = r.scientific_name || '—';
+    document.getElementById('commonName').textContent  = (r.common_names || []).join(' · ') || '—';
+    document.getElementById('familyName').textContent  = r.family ? 'Family: ' + r.family : '';
+
+    const body = document.getElementById('resultsBody');
+    body.innerHTML = '';
+
+    // Confidence
+    const conf = Math.min(100, Math.max(0, parseInt(r.confidence) || 0));
+    body.innerHTML += `
+      <div class="result-section">
+        <div class="r-title">Identification Confidence</div>
+        <div class="conf-row"><span>Match strength</span><span class="conf-val">${conf}%</span></div>
+        <div class="conf-bar"><div class="conf-fill" id="confFill" style="width:0%"></div></div>
+      </div>`;
+    setTimeout(() => {
+      const el = document.getElementById('confFill');
+      if (el) el.style.width = conf + '%';
+    }, 80);
+
+    // Identifying features
+    if (r.identifying_features) {
+      body.innerHTML += section('Identifying Features', `<div class="r-text">${r.identifying_features}</div>`);
+    }
+
+    // Visible issues (highlighted)
+    const issues = r.visible_issues || [];
+    const hasIssue = issues.length && issues[0] !== 'No visible issues detected';
+    body.innerHTML += section('Visible Issues in Photo',
+      `<div class="tags">${issues.map(t => `<span class="tag ${hasIssue ? 'warn' : ''}">${t}</span>`).join('') || '<span class="tag">No visible issues detected</span>'}</div>`
+    );
+
+    // Arborist notes
+    if (r.arborist_notes) {
+      body.innerHTML += section('Arborist Notes', `<div class="r-text">${r.arborist_notes}</div>`);
+    }
+
+    // Diseases & pests
+    if (r.diseases_pests) {
+      body.innerHTML += section('Diseases & Pests', `<div class="r-text">${r.diseases_pests}</div>`);
+    }
+
+    // Ecology
+    if (r.ecology) {
+      body.innerHTML += section('Ecology & Range', `<div class="r-text">${r.ecology}</div>`);
+    }
+
+    // Similar species
+    if (r.similar_species && r.similar_species.length) {
+      body.innerHTML += section('Similar Species',
+        `<div class="tags">${r.similar_species.map(s => `<span class="tag">${s}</span>`).join('')}</div>`
+      );
+    }
+
+    resultsSection.style.display = 'block';
+    disclaimer.style.display     = 'block';
+    newBtn.style.display         = 'block';
+
+    resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function section(title, content) {
+    return `<div class="result-section"><div class="r-title">${title}</div>${content}</div>`;
+  }
+</script>
+</body>
+</html>
